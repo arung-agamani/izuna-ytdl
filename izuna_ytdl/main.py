@@ -1,23 +1,7 @@
-import json
-# import yt_dlp
-import re
 import flask
 from flask import current_app
 import redis
-
-
-URL = 'https://www.youtube.com/watch?v=ICNpuzVc4l8'
-valid_yt_url_regex = "(youtu.*be.*)\/(watch\?v=|embed\/|v|shorts|)(.*?((?=[&#?])|$))"
-# with yt_dlp.YoutubeDL({}) as ydl:
-#     info = ydl.extract_info(URL, download=False)
-#     # print(json.dumps(ydl.sanitize_info(info)))
-#     duration = info.get("duration")
-#     if (duration > 600):
-#         print
-#     print(duration)
-
-# res = re.search(valid_yt_url_regex, URL)
-# print(res.groups()[2])
+import os
 
 
 def create_app(config_filename="") -> flask.Flask:
@@ -25,10 +9,13 @@ def create_app(config_filename="") -> flask.Flask:
     if (config_filename != ""):
         app.config.from_pyfile(config_filename)
 
+    REDIS_HOST = os.environ.get("REDIS_HOST")
+    if REDIS_HOST is None:
+        REDIS_HOST = "localhost"
     redis_client = redis.Redis(
-        host="localhost", port="6379", password="eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81")
+        host=REDIS_HOST, port="6379", password="eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81", decode_responses=True, )
     redis_client.set("foo", "bar")
-    assert redis_client.get("foo") == b"bar"
+    assert redis_client.get("foo") == "bar"
     redis_client.delete("foo")
 
     with app.app_context():
