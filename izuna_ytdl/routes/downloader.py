@@ -9,7 +9,7 @@ from redis import Redis
 from ..utils import regexes, responses
 from ..utils.models import *
 
-bp = Blueprint("downloader", __name__, url_prefix="/downloader")
+bp = Blueprint("downloader", __name__, url_prefix="/api/downloader")
 
 get_info_schema = {
     'id': {'type': 'string'}

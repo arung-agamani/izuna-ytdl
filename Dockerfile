@@ -20,5 +20,5 @@ COPY izuna_ytdl ./izuna_ytdl
 RUN poetry install --without dev
 
 EXPOSE 5000
-
+# TODO: Actually use WSGI server rather than flask cli
 ENTRYPOINT [ "poetry", "run", "flask", "--app", "./izuna_ytdl/main.py", "run", "--host=0.0.0.0" ]
