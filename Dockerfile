@@ -1,14 +1,4 @@
-FROM python:3.9
-
-ENV POETRY_NO_INTERACTION=1 \
-    POETRY_VIRTUALENVS_IN_PROJECT=1 \
-    POETRY_VIRTUALENVS_CREATE=1 \
-    POETRY_CACHE_DIR=/tmp/poetry_cache
-
-RUN apt -y update
-RUN apt -y install ffmpeg
-
-RUN pip install poetry==1.4.2
+FROM arung-agamani/ytdl-base:1.0
 
 RUN mkdir /app
 

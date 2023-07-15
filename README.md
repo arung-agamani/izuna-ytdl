@@ -52,6 +52,15 @@ As this will run a Flask web server, you can customize the arguments, or even us
 
 Additionally, `docker-compose.yaml` is provided for quickly running the project. Firstly build the docker image for this project with tag `izuna-ytdl:latest` as it's referenced in compose file.
 
+### Required Environment Variables
+
+The following section describes the required environment variables to run this application.
+| Environment Variable | Description | Data Type | Required |
+|----------------------|-------------------------------------------------|------------|----------|
+| BUCKET_NAME | AWS S3 bucket name used in the service | String | Yes |
+| JWT_NO_HIMITSU | Secret key for JWT authentication | String | Yes |
+| KAKUSU_HIMITSU | Secret key used by Flask for session encryption | String | Yes |
+
 ## Features
 
 Youtube Downloader as a Service

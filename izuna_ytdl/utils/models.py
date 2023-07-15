@@ -1,7 +1,12 @@
 from redis import Redis
 from dataclasses import dataclass
+from datetime import datetime
+from pydantic import BaseModel, ValidationError
 from enum import Enum
 import json
+from uuid import uuid4
+from typing import cast
+from .redis import get_connection
 
 
 class DownloadStatus(Enum):
@@ -20,6 +25,58 @@ class DownloadInfo:
     id: str
     status: DownloadStatus
     message: str
+
+
+class User(BaseModel):
+    id: str
+    username: str
+    password: str
+    date_created: datetime
+
+
+def create_user(username: str, password: str):
+    id = str(uuid4())
+    date_created = datetime.now()
+    user = User(id=id, username=username, password=password,
+                date_created=date_created)
+    payload = user.model_dump_json()
+    # check if user exists
+    r = cast(Redis, get_connection())
+    if r.get(f"user:{username}") is not None:
+        return False
+    r.set(f"user:{username}", payload)
+    return user
+
+
+def get_user(username: str, password: str):
+    r = cast(Redis, get_connection())
+    user_raw = r.get(f"user:{username}")
+    if user_raw is None:
+        return 0
+    user_obj = json.loads(user_raw)
+    user = User(**user_obj)
+    if user.password != password:
+        return -1
+    return user
+
+
+def get_user_only(username: str):
+    r = cast(Redis, get_connection())
+    user_raw = r.get(f"user:{username}")
+    if user_raw is None:
+        return 0
+    user_obj = json.loads(user_raw)
+    user = User(**user_obj)
+    return user
+
+
+def del_user(username: str):
+    r = cast(Redis, get_connection())
+    user_raw = r.get(f"user:{username}")
+    if user_raw is None:
+        return False
+    r.delete(f"user:{username}")
+    return True
 
 
 def get_download_info(id: str, r: Redis):

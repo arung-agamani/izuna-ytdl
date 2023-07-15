@@ -1,20 +1,21 @@
 version: "3.8"
 services:
-    cache:
-        image: redis:latest
-        restart: always
+    redis:
+        image: redis/redis-stack:latest
         ports:
-            - "6379:6379"
-        command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+            - 6379:6379
+            - 8001:8001
+        # environment:
+        #     - REDIS_ARGS="--requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81"
         volumes:
-            - cache:/data
+            - redis:/data
     server:
         image: izuna-ytdl:latest
         pull_policy: never
         ports:
             - "5000:5000"
         environment:
-            - REDIS_HOST=cache
+            - REDIS_HOST=redis
     web:
         image: nginx:latest
         pull_policy: if_not_present
@@ -24,4 +25,6 @@ services:
             - ./nginx.conf:/etc/nginx/nginx.conf
 volumes:
     cache:
+        driver: local
+    redis:
         driver: local
