@@ -60,7 +60,7 @@ def login():
         "message": "Login success!"
     })
     access_token = create_access_token(identity=username)
-    set_access_cookies(response, access_token)
+    set_access_cookies(response, access_token, domain="howlingmoon.awoo")
     return response
 
 

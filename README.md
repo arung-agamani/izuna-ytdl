@@ -57,9 +57,12 @@ Additionally, `docker-compose.yaml` is provided for quickly running the project.
 The following section describes the required environment variables to run this application.
 | Environment Variable | Description | Data Type | Required |
 |----------------------|-------------------------------------------------|------------|----------|
-| BUCKET_NAME | AWS S3 bucket name used in the service | String | Yes |
+| YTDL_BUCKET_NAME | AWS S3 bucket name used in the service | String | Yes |
 | JWT_NO_HIMITSU | Secret key for JWT authentication | String | Yes |
 | KAKUSU_HIMITSU | Secret key used by Flask for session encryption | String | Yes |
+| AWS_ACCESS_KEY | Access Key used by `boto3` to authenticate to AWS | String | Yes |
+| AWS_SECRET_KEY | Secret key used by `boto3` to authenticate to AWS | String | Yes |
+| AWS_REGION | Region where the S3 bucket is hosted | String | Yes |
 
 ## Features
 

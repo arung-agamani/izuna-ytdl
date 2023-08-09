@@ -1,12 +1,20 @@
-FROM python:3.9
+FROM jrottenberg/ffmpeg:3.4-ubuntu
+
+RUN apt-get update
+RUN apt-get install -y python3.9 python3.9-distutils
+# RUN apt-get install -y python3.9-pip
+# RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+COPY ./get-pip.py ./get-pip.py
+RUN python3.9 get-pip.py
+# RUN python3 -m ensurepip
+RUN pip install --upgrade pip setuptools
 
 ENV POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_IN_PROJECT=1 \
     POETRY_VIRTUALENVS_CREATE=1 \
     POETRY_CACHE_DIR=/tmp/poetry_cache
 
-RUN apt -y update
-RUN apt -y install ffmpeg
+
 
 RUN pip install poetry==1.4.2
 

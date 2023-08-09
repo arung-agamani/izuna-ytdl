@@ -15,7 +15,9 @@ services:
         ports:
             - "5000:5000"
         environment:
-            - REDIS_HOST=redis
+            - REDIS_OM_URL=redis://redis
+        env_file:
+            - .env
     web:
         image: nginx:latest
         pull_policy: if_not_present
