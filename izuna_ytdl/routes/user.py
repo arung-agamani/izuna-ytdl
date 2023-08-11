@@ -3,8 +3,9 @@ import json
 from cerberus import Validator
 from ..utils import regexes, responses, models
 from ..models.user import get_user, create_user, User
+from ..config import DOMAIN, MASTER_SIGNUP_CODE
 from redis_om import RedisModel
-from flask_jwt_extended import set_access_cookies, create_access_token, jwt_required
+from flask_jwt_extended import set_access_cookies, create_access_token, jwt_required, unset_access_cookies
 from flask_jwt_extended import get_jwt, get_jwt_identity
 from datetime import datetime, timezone, timedelta
 import logging
@@ -37,7 +38,7 @@ def refresh_jwt(response: Response):
             logging.debug(target_timestamp - exp_timestamp)
             access_token = create_access_token(
                 identity=get_jwt_identity())
-            set_access_cookies(response, access_token)
+            set_access_cookies(response, access_token, domain=DOMAIN)
         return response
     except (RuntimeError, KeyError):
         # Case where there is not a valid JWT. Just return the original response
@@ -53,6 +54,8 @@ def login():
     if username is None:
         return responses.json_res(make_response(), {"success": False, "message": "username is not in body"}, 400)
     user = get_user(username)
+    if user.password != body.get("password"):
+        return responses.json_res(make_response(), {"success": False, "message": "wrong password"}, 400)
     if user is None:
         return responses.json_res(make_response(), {"success": False, "message": "user not found"}, 404)
     response = jsonify({
@@ -60,7 +63,17 @@ def login():
         "message": "Login success!"
     })
     access_token = create_access_token(identity=username)
-    set_access_cookies(response, access_token, domain="howlingmoon.awoo")
+    set_access_cookies(response, access_token, domain=DOMAIN)
+    return response
+
+
+@bp.route("/logout", methods=["GET"])
+def logout():
+    response = jsonify({
+        "success": True,
+        "message": "Successfully logged out!"
+    })
+    unset_access_cookies(response, domain=DOMAIN)
     return response
 
 
@@ -86,6 +99,10 @@ def register():
         })
         response.content_type = "application/json"
         return response
+
+    # check if signup_code match the master signup code
+    if validate_payload["signup_code"] != MASTER_SIGNUP_CODE:
+        return responses.json_res(make_response(), {"success": False, "message": "invalid signup code"}, 400)
 
     user = create_user(
         validate_payload['username'], validate_payload['password'])

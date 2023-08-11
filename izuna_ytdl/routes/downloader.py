@@ -7,6 +7,7 @@ import re
 import threading
 from ..utils import regexes, responses
 from ..models.download_task import *
+from ..config import DOMAIN
 from flask_jwt_extended import (
     jwt_required, get_jwt_identity, get_jwt,
     create_access_token, set_access_cookies,
@@ -50,7 +51,7 @@ def refresh_jwt(response: Response):
             logging.debug(target_timestamp - exp_timestamp)
             access_token = create_access_token(
                 identity=get_jwt_identity())
-            set_access_cookies(response, access_token)
+            set_access_cookies(response, access_token, domain=DOMAIN)
         return response
     except (RuntimeError, KeyError):
         # Case where there is not a valid JWT. Just return the original response
@@ -123,6 +124,20 @@ def retrieve_s3_file():
 async def handle_download():
     body = request.json
 
+    # validate not exceeding limit
+    username = get_jwt_identity()
+    tasks = DownloadTask.find(DownloadTask.created_by == username).all()
+    list_obj = [json.loads(x.json()) for x in tasks]
+    if len(list_obj) > config.MAX_USER_TASK:
+        response = make_response()
+        response.status_code = 429
+        response.data = json.dumps({
+            "success": False,
+            "message": f"Maximum task exceed the limit of {config.MAX_USER_TASK}"
+        })
+        response.content_type = "application/json"
+        return response
+
     validator = Validator(download_schema)
     validate_payload = {
         "url": body.get("url")
@@ -147,7 +162,7 @@ async def handle_download():
         "success": True,
         "message": f"Queuing download task for Youtube video with id {id}"
     }
-    username = get_jwt_identity()
+
     # threading part
     if task is None:
         logging.debug("No task found. Creating and queueing")
@@ -209,7 +224,7 @@ def download(id: str, task: DownloadTask):
             if duration > 600:
                 task.update_state(ERROR_TOO_LONG)
                 return
-
+            task.update_title(info.get("title"))
             count = ydl.download(f"https://www.youtube.com/watch?v={id}")
             logging.debug("Download complete")
             logging.debug(f"End filename: ${final_filename}")

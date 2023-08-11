@@ -1,6 +1,7 @@
 import datetime
 from redis_om import JsonModel, Field, NotFoundError
 from typing import cast
+from .user import get_user
 
 
 QUEUED = "0"
@@ -14,6 +15,7 @@ class DownloadTask(JsonModel):
     title: str
     id: str = Field(index=True)
     created_by: str = Field(index=True)
+    created_at: datetime.datetime = Field(index=True)
     url: str
     state: str
 
@@ -43,12 +45,27 @@ def get_task(id: str):
         return None
 
 
+def get_task_by_user(username: str):
+    try:
+        user = get_user(username)
+        if user is None:
+            return []
+        tasks = DownloadTask.find(
+            DownloadTask.created_by == user.username).all()
+        tasks.sort(key=lambda task: task.created_at)
+        return tasks
+    except NotFoundError as e:
+        print(e)
+        return []
+
+
 def create_task(id: str, url: str, title: str, created_by: str):
     task = get_task(id)
     if task is not None:
         return None
+    now = datetime.datetime.now()
     task = DownloadTask(
-        id=id, title=title, url=url, state=QUEUED, created_by=created_by
+        id=id, title=title, url=url, state=QUEUED, created_by=created_by, created_at=now
     )
     task.save()
     return task
