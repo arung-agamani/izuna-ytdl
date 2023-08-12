@@ -14,7 +14,7 @@ def create_app(config_filename="") -> flask.Flask:
     app.config['JWT_SECRET_KEY'] = config.JWT_NO_HIMITSU
     app.config['JWT_TOKEN_LOCATION'] = "cookies"
     app.config['JWT_COOKIE_SECURE'] = False
-    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=12)
 
     Migrator(module="izuna_ytdl.models").run()
     redis_client = get_redis_connection()

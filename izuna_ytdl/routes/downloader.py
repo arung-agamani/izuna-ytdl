@@ -7,6 +7,7 @@ import re
 import threading
 from ..utils import regexes, responses
 from ..models.download_task import *
+from ..models.item import *
 from ..config import DOMAIN
 from flask_jwt_extended import (
     jwt_required, get_jwt_identity, get_jwt,
@@ -37,25 +38,25 @@ download_schema = {
 }
 
 
-@bp.after_request
-def refresh_jwt(response: Response):
-    try:
-        exp_timestamp = get_jwt()["exp"]
-        now = datetime.now(timezone.utc)
-        target_timestamp = datetime.timestamp(now + timedelta(minutes=30))
-        # print(exp_timestamp)
-        # print(now)
-        # print(target_timestamp)
-        if target_timestamp > exp_timestamp:
-            logging.debug("Expiring. Refreshing...")
-            logging.debug(target_timestamp - exp_timestamp)
-            access_token = create_access_token(
-                identity=get_jwt_identity())
-            set_access_cookies(response, access_token, domain=DOMAIN)
-        return response
-    except (RuntimeError, KeyError):
-        # Case where there is not a valid JWT. Just return the original response
-        return response
+# @bp.after_request
+# def refresh_jwt(response: Response):
+#     try:
+#         exp_timestamp = get_jwt()["exp"]
+#         now = datetime.now(timezone.utc)
+#         target_timestamp = datetime.timestamp(now + timedelta(minutes=30))
+#         # print(exp_timestamp)
+#         # print(now)
+#         # print(target_timestamp)
+#         if target_timestamp > exp_timestamp:
+#             logging.debug("Expiring. Refreshing...")
+#             logging.debug(target_timestamp - exp_timestamp)
+#             access_token = create_access_token(
+#                 identity=get_jwt_identity())
+#             set_access_cookies(response, access_token, domain=DOMAIN)
+#         return response
+#     except (RuntimeError, KeyError):
+#         # Case where there is not a valid JWT. Just return the original response
+#         return response
 
 
 @bp.route("/info", methods=['GET'])
@@ -78,6 +79,7 @@ def retrieve_s3_file():
     args = request.args
 
     id = args.get('id')
+    username = get_jwt_identity()
 
     validator = Validator(get_info_schema)
     validate_payload = {
@@ -94,7 +96,7 @@ def retrieve_s3_file():
         })
         response.content_type = "application/json"
         return response
-    task = get_task(validate_payload['id'])
+    task = get_task_with_user(validate_payload['id'], username)
     if task is None:
         response = jsonify({
             "success": False,
@@ -105,7 +107,7 @@ def retrieve_s3_file():
         res = s3.generate_presigned_url('get_object',
                                         Params={
                                             'Bucket': config.BUCKET_NAME,
-                                            'Key': f"public/{task.title}"
+                                            'Key': task.item.remote_key
                                         },
                                         ExpiresIn=600
                                         )
@@ -155,8 +157,34 @@ async def handle_download():
         return response
 
     re_match = re.match(regexes.YOUTUBE_URL, validate_payload["url"])
-    id = re_match.groups()[4]
-    task = get_task(id)
+    # handle case of regular expression checks
+    host = re_match.groups()[2]
+    id_delimiter = re_match.groups()[3]
+    id = ""
+
+    # case of standard youtube.com with /watch?v=
+    if host == "youtube.com":
+        if id_delimiter == "/watch?v=" or id_delimiter == "/v/" or id_delimiter == "/embed/" or id_delimiter.endswith("?v="):
+            id = re_match.groups()[4]
+        # elif id_delimiter == "/v/":
+        #     id = re_match.groups()[4]
+        # elif id_delimiter == "/embed/":
+        #     id = re_match.groups()[4]
+        # elif id_delimiter.endswith("?v="):
+        #     id = re_match.groups()[4]
+        else:
+            id = ""
+    elif host == "youtu.be":
+        if id_delimiter == "/":
+            id = re_match.groups()[4]
+        else:
+            id = ""
+
+    if id == "":
+        return jsonify({"success": False, "message": "Invalid URL given"}), 400
+
+    # task = get_task(id)
+    task = get_task_with_user(id, username)
     res = make_response()
     data = {
         "success": True,
@@ -165,6 +193,25 @@ async def handle_download():
 
     # threading part
     if task is None:
+        # check if item exist
+        item = get_item(id)
+        if item is not None:
+            logging.debug(
+                f"No task found for {username} but item with id {id} exists. Associating...")
+            _task = create_task_with_item(
+                id=id, url=validate_payload["url"], title=item.name, created_by=username, item=item)
+            if _task is None:
+                response = jsonify({
+                    "success": True,
+                    "message": "Download task already exist for given values"
+                })
+                return response, 200
+            _task.update_state(DONE)
+            response = jsonify({
+                "success": True,
+                "message": "Item exists for queried item. Associated user's data to the item"
+            })
+            return response
         logging.debug("No task found. Creating and queueing")
         _task = create_task(
             id=id, url=validate_payload['url'], title="", created_by=username)
@@ -174,6 +221,7 @@ async def handle_download():
         logging.debug("Existing task found. Checking")
         if task.state == QUEUED:
             logging.debug("Existing task found and queued. Executing")
+            # TODO:
             x = threading.Thread(target=download, args=(id, task))
             x.start()
         elif task.state == DONE:
@@ -229,15 +277,21 @@ def download(id: str, task: DownloadTask):
             logging.debug("Download complete")
             logging.debug(f"End filename: ${final_filename}")
             logging.debug(f"End filepath: ${final_filepath}")
+            remote_key = f"public/{id}/{final_filename}"
+            task.item.set_name(final_filename)
+            task.item.set_remote_key(remote_key)
             s3.upload_file(final_filepath, config.BUCKET_NAME,
-                           f"public/{final_filename}")
+                           remote_key)
             task.update(final_filename, DONE)
             os.remove(final_filepath)
             return
     except yt_dlp.utils.DownloadError as err:
         logging.error("Download error")
         logging.error(err)
-        task.update_state(ERROR_UNKNOWN)
-    except:
-        logging.error("Other errors")
+        if err.msg.rfind("Video unavailable") != -1:
+            task.update_state(ERROR_NOT_FOUND)
+        else:
+            task.update_state(ERROR_DOWNLOAD)
+    except Exception as err:
+        logging.error(f"Other errors: {err.__class__.__name__}")
         task.update_state(ERROR_UNKNOWN)

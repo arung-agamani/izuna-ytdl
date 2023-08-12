@@ -1,14 +1,17 @@
 import datetime
+import logging
 from redis_om import JsonModel, Field, NotFoundError
-from typing import cast
+from typing import cast, Optional
 from .user import get_user
-
+from .item import Item, create_item
 
 QUEUED = "0"
 PROCESSING = "1"
 DONE = "2"
 ERROR_UNKNOWN = "3"
 ERROR_TOO_LONG = "4"
+ERROR_DOWNLOAD = "5"
+ERROR_NOT_FOUND = "6"
 
 
 class DownloadTask(JsonModel):
@@ -18,6 +21,7 @@ class DownloadTask(JsonModel):
     created_at: datetime.datetime = Field(index=True)
     url: str
     state: str
+    item: Optional[Item]
 
     def update_state(self, state: str):
         self.state = state
@@ -25,6 +29,10 @@ class DownloadTask(JsonModel):
 
     def update_title(self, title: str):
         self.title = title
+        self.save()
+
+    def set_item(self, item: Item):
+        self.item = item
         self.save()
 
     def update(self, title: str, state: str):
@@ -45,6 +53,18 @@ def get_task(id: str):
         return None
 
 
+def get_task_with_user(id: str, username: str):
+    try:
+        task = DownloadTask.find(
+            (DownloadTask.id == id) & (DownloadTask.created_by == username)
+        ).first()
+        task = cast(DownloadTask, task)
+        return task
+    except NotFoundError as e:
+        logging.error(e)
+        return None
+
+
 def get_task_by_user(username: str):
     try:
         user = get_user(username)
@@ -60,7 +80,34 @@ def get_task_by_user(username: str):
 
 
 def create_task(id: str, url: str, title: str, created_by: str):
-    task = get_task(id)
+    task = get_task_with_user(id, created_by)
+    if task is not None:
+        return None
+    now = datetime.datetime.now()
+    item = create_item(id, "", created_by, now, url, url, "")
+    task = DownloadTask(
+        id=id, title=title, url=url, state=QUEUED, created_by=created_by, created_at=now, item=item
+    )
+    task.save()
+    # task.set_item(item)
+    return task
+
+
+def create_task_with_item(id: str, url: str, title: str, created_by: str, item: Item):
+    task = get_task_with_user(id, created_by)
+    if task is not None:
+        return None
+    now = datetime.datetime.now()
+    task = DownloadTask(
+        id=id, title=title, url=url, state=QUEUED, created_by=created_by, created_at=now, item=item
+    )
+    task.save()
+    # task.set_item(item)
+    return task
+
+
+def create_task_without_item(id: str, url: str, title: str, created_by: str):
+    task = get_task_with_user(id, created_by)
     if task is not None:
         return None
     now = datetime.datetime.now()

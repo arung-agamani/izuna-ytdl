@@ -24,25 +24,25 @@ signin_schema = {
 }
 
 
-@bp.after_request
-def refresh_jwt(response: Response):
-    try:
-        exp_timestamp = get_jwt()["exp"]
-        now = datetime.now(timezone.utc)
-        target_timestamp = datetime.timestamp(now + timedelta(minutes=30))
-        # print(exp_timestamp)
-        # print(now)
-        # print(target_timestamp)
-        if target_timestamp > exp_timestamp:
-            logging.debug("Expiring. Refreshing...")
-            logging.debug(target_timestamp - exp_timestamp)
-            access_token = create_access_token(
-                identity=get_jwt_identity())
-            set_access_cookies(response, access_token, domain=DOMAIN)
-        return response
-    except (RuntimeError, KeyError):
-        # Case where there is not a valid JWT. Just return the original response
-        return response
+# @bp.after_request
+# def refresh_jwt(response: Response):
+#     try:
+#         exp_timestamp = get_jwt()["exp"]
+#         now = datetime.now(timezone.utc)
+#         target_timestamp = datetime.timestamp(now + timedelta(minutes=30))
+#         # print(exp_timestamp)
+#         # print(now)
+#         # print(target_timestamp)
+#         if target_timestamp > exp_timestamp:
+#             logging.debug("Expiring. Refreshing...")
+#             logging.debug(target_timestamp - exp_timestamp)
+#             access_token = create_access_token(
+#                 identity=get_jwt_identity())
+#             set_access_cookies(response, access_token, domain=DOMAIN)
+#         return response
+#     except (RuntimeError, KeyError):
+#         # Case where there is not a valid JWT. Just return the original response
+#         return response
 
 
 @bp.route("/login", methods=["POST"])
@@ -54,6 +54,12 @@ def login():
     if username is None:
         return responses.json_res(make_response(), {"success": False, "message": "username is not in body"}, 400)
     user = get_user(username)
+    if user is None:
+        response = jsonify({
+            "success": False,
+            "message": "User doesn't exist"
+        })
+        return response, 404
     if user.password != body.get("password"):
         return responses.json_res(make_response(), {"success": False, "message": "wrong password"}, 400)
     if user is None:
