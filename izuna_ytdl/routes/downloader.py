@@ -232,14 +232,29 @@ async def handle_download():
     return responses.json_res(res, data, 202)
 
 # TODO: add garbage collection.
-ydl_opts = {
-    'format': 'm4a/bestaudio/best',
-    'outtmpl': {'default': '%(title)s.%(ext)s'},
-    'postprocessors': [{
-        'key': 'FFmpegExtractAudio',
-        'preferredcodec': 'mp3',
-    }]
-}
+# ydl_opts = {
+#     'format': 'm4a/bestaudio/best',
+#     'outtmpl': {'default': '%(title)s.%(ext)s'},
+#     'postprocessors': [{
+#         'key': 'FFmpegExtractAudio',
+#         'preferredcodec': 'mp3',
+#     }]
+# }
+
+ydl_opts = {'extract_flat': 'discard_in_playlist',
+            'final_ext': 'mp3',
+            'format': 'ba',
+            'fragment_retries': 10,
+            'ignoreerrors': 'only_download',
+            'outtmpl': {'default': '%(title)s.%(ext)s'},
+            'postprocessors': [{'key': 'FFmpegExtractAudio',
+                                'nopostoverwrites': False,
+                                'preferredcodec': 'mp3',
+                                'preferredquality': '5'},
+                               {'key': 'FFmpegConcat',
+                                'only_multi_video': True,
+                                'when': 'playlist'}],
+            'retries': 10}
 
 
 def download(id: str, task: DownloadTask):
@@ -256,12 +271,20 @@ def download(id: str, task: DownloadTask):
     try:
 
         ydl_opts = {
-            'format': 'm4a/bestaudio/best',
+            'extract_flat': 'discard_in_playlist',
+            'final_ext': 'mp3',
+            'format': 'ba',
+            'fragment_retries': 10,
+            'ignoreerrors': 'only_download',
             'outtmpl': {'default': '%(title)s.%(ext)s'},
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-            }],
+            'postprocessors': [{'key': 'FFmpegExtractAudio',
+                                'nopostoverwrites': False,
+                                'preferredcodec': 'mp3',
+                                'preferredquality': '5'},
+                               {'key': 'FFmpegConcat',
+                                'only_multi_video': True,
+                                'when': 'playlist'}],
+            'retries': 10,
             'postprocessor_hooks': [yt_dlp_monitor]
         }
         task.update_state(PROCESSING)
