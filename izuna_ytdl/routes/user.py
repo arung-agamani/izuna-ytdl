@@ -74,7 +74,7 @@ def login():
 
 
 @bp.route("/logout", methods=["POST"])
-@jwt_required()
+# @jwt_required()
 def logout():
     response = jsonify({
         "success": True,
