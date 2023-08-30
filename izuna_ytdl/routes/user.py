@@ -132,7 +132,7 @@ def register():
     response.content_type = "application/json"
     access_token = create_access_token(
         identity=validate_payload['username'])
-    set_access_cookies(response, access_token)
+    set_access_cookies(response, access_token, domain=DOMAIN)
     return response
 
 
