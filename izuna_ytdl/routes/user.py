@@ -73,7 +73,8 @@ def login():
     return response
 
 
-@bp.route("/logout", methods=["GET"])
+@bp.route("/logout", methods=["POST"])
+@jwt_required()
 def logout():
     response = jsonify({
         "success": True,
@@ -132,7 +133,7 @@ def register():
     response.content_type = "application/json"
     access_token = create_access_token(
         identity=validate_payload['username'])
-    set_access_cookies(response, access_token)
+    set_access_cookies(response, access_token, domain=DOMAIN)
     return response
 
 

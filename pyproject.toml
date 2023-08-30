@@ -4,12 +4,12 @@ version = "0.1.0"
 description = ""
 authors = ["Arung Agamani <arung.agamani@gmail.com>"]
 readme = "README.md"
-packages = [{include = "izuna_ytdl"}]
+packages = [{ include = "izuna_ytdl" }]
 
 [tool.poetry.dependencies]
 python = "^3.9"
 yt-dlp = "^2023.7.6"
-flask = {extras = ["async"], version = "^2.3.2"}
+flask = { extras = ["async"], version = "^2.3.2" }
 cerberus = "^1.3.4"
 redis = "^4.6.0"
 pydantic = "^2.0.2"
@@ -22,3 +22,7 @@ boto3 = "^1.28.3"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poe.tasks]
+run = "poetry run flask --app ./izuna_ytdl/main.py run --host=0.0.0.0"
+shell = "poetry run flask --app ./izuna_ytdl/main.py shell"
