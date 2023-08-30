@@ -43,9 +43,7 @@ class DownloadTask(JsonModel):
 
 def get_task(id: str):
     try:
-        task = DownloadTask.find(
-            DownloadTask.id == id
-        ).first()
+        task = DownloadTask.find(DownloadTask.id == id).first()
         task = cast(DownloadTask, task)
         return task
     except NotFoundError as e:
@@ -70,8 +68,7 @@ def get_task_by_user(username: str):
         user = get_user(username)
         if user is None:
             return []
-        tasks = DownloadTask.find(
-            DownloadTask.created_by == user.username).all()
+        tasks = DownloadTask.find(DownloadTask.created_by == user.username).all()
         tasks.sort(key=lambda task: task.created_at)
         return tasks
     except NotFoundError as e:
@@ -86,7 +83,13 @@ def create_task(id: str, url: str, title: str, created_by: str):
     now = datetime.datetime.now()
     item = create_item(id, "", created_by, now, url, url, "")
     task = DownloadTask(
-        id=id, title=title, url=url, state=QUEUED, created_by=created_by, created_at=now, item=item
+        id=id,
+        title=title,
+        url=url,
+        state=QUEUED,
+        created_by=created_by,
+        created_at=now,
+        item=item,
     )
     task.save()
     # task.set_item(item)
@@ -99,7 +102,13 @@ def create_task_with_item(id: str, url: str, title: str, created_by: str, item: 
         return None
     now = datetime.datetime.now()
     task = DownloadTask(
-        id=id, title=title, url=url, state=QUEUED, created_by=created_by, created_at=now, item=item
+        id=id,
+        title=title,
+        url=url,
+        state=QUEUED,
+        created_by=created_by,
+        created_at=now,
+        item=item,
     )
     task.save()
     # task.set_item(item)

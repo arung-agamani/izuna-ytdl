@@ -37,8 +37,7 @@ class User(BaseModel):
 def create_user(username: str, password: str):
     id = str(uuid4())
     date_created = datetime.now()
-    user = User(id=id, username=username, password=password,
-                date_created=date_created)
+    user = User(id=id, username=username, password=password, date_created=date_created)
     payload = user.model_dump_json()
     # check if user exists
     r = cast(Redis, get_connection())
@@ -95,8 +94,7 @@ def get_download_info(id: str, r: Redis):
 
 def set_download_info(info: DownloadInfo, r: Redis):
     p = r.pipeline()
-    p.set(f"status:{info.id}", json.dumps(
-        info.status, default=str))
+    p.set(f"status:{info.id}", json.dumps(info.status, default=str))
     p.set(f"message:{info.id}", info.message)
     res = p.execute()
     if None in res:

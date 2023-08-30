@@ -27,6 +27,8 @@ To use this project, you'll need:
         curl -sSL https://install.python-poetry.org | python3 -
         ```
         For other installation methods, refer to the [Poetry documentation](https://python-poetry.org/docs/#installation).
+-   Poe task runner
+    -   Install via https://github.com/nat-n/poethepoet
 -   Python packages  
     As this project is using Poetry, the list of packages are already listed in `pyproject.toml`. Simply run `poetry install` to install the dependencies.
 -   `ffmpeg` binary
@@ -45,7 +47,7 @@ Once you have Python, Poetry, `yt-dlp`, and `ffmpeg` set up, you're ready to use
 The following command will run the web server that will accept requests.
 
 ```
-poetry run flask --app ./izuna_ytdl/main.py run --host=0.0.0.0
+poe run
 ```
 
 As this will run a Flask web server, you can customize the arguments, or even use WSGI server like `gunicorn` to run it. Further instruction for this will be released in next iteration.

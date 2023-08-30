@@ -32,11 +32,26 @@ def get_item(id: str):
         return None
 
 
-def create_item(id: str, name: str, created_by: str, created_at: datetime.datetime, original_url: str, original_query: str, remote_key: str = ""):
+def create_item(
+    id: str,
+    name: str,
+    created_by: str,
+    created_at: datetime.datetime,
+    original_url: str,
+    original_query: str,
+    remote_key: str = "",
+):
     item = get_item(id)
     if item is not None:
         return None
-    item = Item(id=id, name=name, created_by=created_by, created_at=created_at,
-                original_url=original_url, original_query=original_query, remote_key=remote_key)
+    item = Item(
+        id=id,
+        name=name,
+        created_by=created_by,
+        created_at=created_at,
+        original_url=original_url,
+        original_query=original_query,
+        remote_key=remote_key,
+    )
     item.save()
     return item

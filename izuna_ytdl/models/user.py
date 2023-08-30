@@ -17,9 +17,7 @@ def create_user(username: str, password: str):
     if user is not None:
         return False
     user = User(
-        username=username,
-        password=password,
-        date_created=datetime.datetime.now()
+        username=username, password=password, date_created=datetime.datetime.now()
     )
 
     user.save()
