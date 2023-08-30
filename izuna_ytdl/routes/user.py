@@ -73,7 +73,8 @@ def login():
     return response
 
 
-@bp.route("/logout", methods=["GET"])
+@bp.route("/logout", methods=["POST"])
+@jwt_required()
 def logout():
     response = jsonify({
         "success": True,
