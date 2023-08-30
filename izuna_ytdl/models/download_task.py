@@ -1,17 +1,19 @@
 import datetime
+from enum import Enum
 import logging
 from redis_om import JsonModel, Field, NotFoundError
 from typing import cast, Optional
 from .user import get_user
 from .item import Item, create_item
 
-QUEUED = "0"
-PROCESSING = "1"
-DONE = "2"
-ERROR_UNKNOWN = "3"
-ERROR_TOO_LONG = "4"
-ERROR_DOWNLOAD = "5"
-ERROR_NOT_FOUND = "6"
+class DownloadStatusEnum(Enum):
+    QUEUED = "0"
+    PROCESSING = "1"
+    DONE = "2"
+    ERROR_UNKNOWN = "3"
+    ERROR_TOO_LONG = "4"
+    ERROR_DOWNLOAD = "5"
+    ERROR_NOT_FOUND = "6"
 
 
 class DownloadTask(JsonModel):
@@ -20,10 +22,11 @@ class DownloadTask(JsonModel):
     created_by: str = Field(index=True)
     created_at: datetime.datetime = Field(index=True)
     url: str
-    state: str
+    state: DownloadStatusEnum
     item: Optional[Item]
+    downloaded_bytes: Optional[int]
 
-    def update_state(self, state: str):
+    def update_state(self, state: DownloadStatusEnum):
         self.state = state
         self.save()
 
@@ -35,9 +38,13 @@ class DownloadTask(JsonModel):
         self.item = item
         self.save()
 
-    def update(self, title: str, state: str):
+    def update(self, title: str, state: DownloadStatusEnum):
         self.title = title
         self.state = state
+        self.save()
+    
+    def set_downloaded_bytes(self, v: int):
+        self.downloaded_bytes = v
         self.save()
 
 
@@ -86,7 +93,7 @@ def create_task(id: str, url: str, title: str, created_by: str):
         id=id,
         title=title,
         url=url,
-        state=QUEUED,
+        state=DownloadStatusEnum.QUEUED,
         created_by=created_by,
         created_at=now,
         item=item,
@@ -105,7 +112,7 @@ def create_task_with_item(id: str, url: str, title: str, created_by: str, item: 
         id=id,
         title=title,
         url=url,
-        state=QUEUED,
+        state=DownloadStatusEnum.QUEUED,
         created_by=created_by,
         created_at=now,
         item=item,
@@ -121,7 +128,7 @@ def create_task_without_item(id: str, url: str, title: str, created_by: str):
         return None
     now = datetime.datetime.now()
     task = DownloadTask(
-        id=id, title=title, url=url, state=QUEUED, created_by=created_by, created_at=now
+        id=id, title=title, url=url, state=DownloadStatusEnum.QUEUED, created_by=created_by, created_at=now
     )
     task.save()
     return task

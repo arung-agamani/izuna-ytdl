@@ -1,6 +1,6 @@
 import datetime
 from redis_om import JsonModel, Field, NotFoundError
-from typing import cast
+from typing import Optional, cast
 import logging
 
 
@@ -12,6 +12,7 @@ class Item(JsonModel):
     original_url: str
     original_query: str
     remote_key: str
+    total_bytes: Optional[int]
 
     def set_remote_key(self, key: str):
         self.remote_key = key
@@ -19,6 +20,10 @@ class Item(JsonModel):
 
     def set_name(self, name: str):
         self.name = name
+        self.save()
+
+    def set_total_bytes(self, v: int):
+        self.total_bytes = v
         self.save()
 
 
