@@ -1,6 +1,6 @@
 from sqlmodel import create_engine, SQLModel
 
-from ..models.user import User
+from izuna_ytdl.models.user import User
 
 # sqlite_file_name = "database.db"
 # sqlite_url = f"sqlite:///{sqlite_file_name}"
