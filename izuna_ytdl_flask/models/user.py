@@ -10,6 +10,9 @@ class User(JsonModel):
     password: str
     date_created: datetime.datetime
 
+    class Meta:
+        model_key_prefix = "izuna_ytdl.models.user.User"
+
 
 def create_user(username: str, password: str):
     # check if user exist

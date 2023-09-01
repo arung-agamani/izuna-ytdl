@@ -1,0 +1,21 @@
+from sqlmodel import create_engine, SQLModel, Session
+
+from izuna_ytdl.models.user import User
+from izuna_ytdl.config import *
+
+from izuna_ytdl_flask.models.user import User as fUser
+
+engine = create_engine(DB_CONNECTION_URL, echo=True)
+
+with Session(engine) as session:
+    users = fUser.find()
+    for u in users:
+        u: fUser = u
+        print(u)
+        nUser = User(
+            username=u.username, password=u.password, created_at=u.date_created
+        )
+        print(nUser)
+        session.add(nUser)
+
+    session.commit()
