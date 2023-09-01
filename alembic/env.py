@@ -19,8 +19,7 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-# import all models down here to autogenerate alembic
-from izuna_ytdl.models.user import User
+import izuna_ytdl.models
 
 target_metadata = SQLModel.metadata
 
