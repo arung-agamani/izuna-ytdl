@@ -860,6 +860,23 @@ files = [
 ]
 
 [[package]]
+name = "joserfc"
+version = "0.7.0"
+description = "The ultimate Python library for JOSE RFCs, including JWS, JWE, JWK, JWA, JWT"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "joserfc-0.7.0-py3-none-any.whl", hash = "sha256:4940cecfa4a0139bd6bb833d15a7ded867c5871ef8a4b6179453dd598f2a845d"},
+    {file = "joserfc-0.7.0.tar.gz", hash = "sha256:e599fdd1bc2bac094347db44b6738170497101e3fbd7339a66b99100275754e2"},
+]
+
+[package.dependencies]
+cryptography = "*"
+
+[package.extras]
+drafts = ["pycryptodome"]
+
+[[package]]
 name = "mako"
 version = "1.2.4"
 description = "A super-fast templating language that borrows the best ideas from the existing templating languages."
@@ -1746,4 +1763,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "259060293af279bbe21aa7a44efd082112329b41b418e533e50639f0cc70b403"
+content-hash = "33850280d420540e389cd02e64aaabdc87fba7906c22bdb4c00ea0b56bc9fe7e"

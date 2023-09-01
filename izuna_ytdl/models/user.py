@@ -1,8 +1,9 @@
 import datetime
 from typing import Optional
 import uuid as uuid_pkg
+from sqlmodel import Field, SQLModel, Session, select
 
-from sqlmodel import Field, SQLModel
+from izuna_ytdl.database import engine
 
 
 class User(SQLModel, table=True):
@@ -14,3 +15,23 @@ class User(SQLModel, table=True):
     created_at: datetime.datetime = Field(
         nullable=False, default_factory=datetime.datetime.now
     )
+
+    @staticmethod
+    def create(*, username: str, password: str):
+        with Session(engine) as session:
+            u = User(username=username, password=password)
+            session.add(u)
+            session.commit()
+            return u
+
+    @staticmethod
+    def get_by_username(username: str):
+        with Session(engine) as session:
+            stmt = select(User).where(User.username == username)
+            result = session.exec(stmt)
+            user = result.first()
+            return user
+
+    def is_password_match(self, password: str) -> bool:
+        # TODO: implement password hashing
+        return self.password == password
