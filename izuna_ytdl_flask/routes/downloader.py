@@ -8,7 +8,7 @@ import threading
 from ..utils import regexes, responses
 from ..models.download_task import *
 from ..models.item import *
-from ..config import DOMAIN
+from ...izuna_ytdl.config import DOMAIN
 from flask_jwt_extended import (
     jwt_required,
     get_jwt_identity,
@@ -21,7 +21,7 @@ import boto3
 from botocore.exceptions import ClientError
 import os
 import logging
-from .. import config
+from ...izuna_ytdl import config
 
 s3 = boto3.client("s3")
 
@@ -247,6 +247,7 @@ async def handle_download():
 #     }]
 # }
 
+
 def download(id: str, task: DownloadTask):
     final_filename = None
     final_filepath = ""
@@ -259,7 +260,7 @@ def download(id: str, task: DownloadTask):
             final_filepath = (
                 d.get("info_dict").get("__files_to_move").get(final_filename)
             )
-    
+
     def progress_hook(d: dict):
         task.set_downloaded_bytes(d["downloaded_bytes"])
         task.item.set_total_bytes(d["total_bytes"])
@@ -283,7 +284,7 @@ def download(id: str, task: DownloadTask):
             ],
             "retries": 10,
             "postprocessor_hooks": [yt_dlp_monitor],
-            "progress_hooks": [progress_hook]
+            "progress_hooks": [progress_hook],
         }
         task.update_state(DownloadStatusEnum.PROCESSING)
 

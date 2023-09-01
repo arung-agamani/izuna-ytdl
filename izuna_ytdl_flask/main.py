@@ -3,7 +3,7 @@ from flask import current_app
 from datetime import timedelta
 from redis_om import Migrator, get_redis_connection
 from flask_jwt_extended import JWTManager
-from . import config
+from ..izuna_ytdl import config
 
 
 def create_app(config_filename="") -> flask.Flask:

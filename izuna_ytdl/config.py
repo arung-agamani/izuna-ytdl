@@ -7,3 +7,5 @@ DOMAIN = os.environ["DOMAIN"]
 MAX_USER_TASK = int(os.environ["MAX_USER_TASK"])
 MASTER_SIGNUP_CODE = os.environ["MASTER_SIGNUP_CODE"]
 MASTER_TOKEN = os.environ["MASTER_TOKEN"]
+
+DB_CONNECTION_URL = os.environ["DB_CONNECTION_URL"]

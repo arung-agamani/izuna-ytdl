@@ -11,7 +11,7 @@ import json
 from cerberus import Validator
 from ..utils import regexes, responses, models
 from ..models.user import get_user, create_user, User
-from ..config import DOMAIN, MASTER_SIGNUP_CODE
+from ...izuna_ytdl.config import DOMAIN, MASTER_SIGNUP_CODE
 from redis_om import RedisModel
 from flask_jwt_extended import (
     set_access_cookies,

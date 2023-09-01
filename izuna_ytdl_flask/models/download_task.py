@@ -6,6 +6,7 @@ from typing import cast, Optional
 from .user import get_user
 from .item import Item, create_item
 
+
 class DownloadStatusEnum(Enum):
     QUEUED = "0"
     PROCESSING = "1"
@@ -42,7 +43,7 @@ class DownloadTask(JsonModel):
         self.title = title
         self.state = state
         self.save()
-    
+
     def set_downloaded_bytes(self, v: int):
         self.downloaded_bytes = v
         self.save()
@@ -128,7 +129,12 @@ def create_task_without_item(id: str, url: str, title: str, created_by: str):
         return None
     now = datetime.datetime.now()
     task = DownloadTask(
-        id=id, title=title, url=url, state=DownloadStatusEnum.QUEUED, created_by=created_by, created_at=now
+        id=id,
+        title=title,
+        url=url,
+        state=DownloadStatusEnum.QUEUED,
+        created_by=created_by,
+        created_at=now,
     )
     task.save()
     return task
