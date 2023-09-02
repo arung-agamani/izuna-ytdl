@@ -1,5 +1,5 @@
-from fastapi import Depends, Response, Header, HTTPException, status, Request, Cookie
-from typing import Annotated, Optional
+from fastapi import Depends, Response, HTTPException, status, Request, Cookie
+from typing import Annotated
 from argon2 import PasswordHasher
 from sqlmodel import Session
 
@@ -32,14 +32,14 @@ async def get_login_user(
     from izuna_ytdl.models import User
 
     print(req.headers)
-    if access_token_cookie == None:
+    if access_token_cookie is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="missing access token"
         )
 
     username = access_token_cookie
     user = User.get_by_username(session, username=username)
-    if user == None:
+    if user is None:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="invalid access token"
         )

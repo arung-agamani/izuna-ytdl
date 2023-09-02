@@ -1,9 +1,8 @@
-from sqlmodel import create_engine, SQLModel, Session
+from sqlmodel import create_engine, Session
 
 from izuna_ytdl import config
-from izuna_ytdl.models import Item, DownloadTask
+from izuna_ytdl.models import Item
 from izuna_ytdl_flask.models.item import Item as RedisItem
-from izuna_ytdl_flask.models.download_task import DownloadTask as RedisTask
 
 
 engine = create_engine(config.DB_CONNECTION_URL, echo=True)

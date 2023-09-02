@@ -1,8 +1,6 @@
 import datetime
-from typing import Optional
-from pydantic import EmailStr
 
-from redis_om import HashModel, JsonModel, Field, model
+from redis_om import JsonModel, Field, model
 
 
 class User(JsonModel):
@@ -31,6 +29,6 @@ def get_user(username: str):
     try:
         user = User.find(User.username == username).first()
         return user
-    except model.NotFoundError as e:
+    except model.NotFoundError:
         print(f"Error happened when querying user '{username}'")
         return None

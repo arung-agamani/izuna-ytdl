@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Response, status, Depends, Header, HTTPException
+from fastapi import APIRouter, status, Depends, HTTPException
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from typing import Annotated
@@ -19,7 +19,7 @@ class Login(BaseModel):
 @router.post("/login", response_model=str)
 async def user_login(login: Login, session: Annotated[Session, Depends(get_session)]):
     user = User.get_by_username(session, username=login.username)
-    if user == None or not user.is_password_match(login.password):
+    if user is None or not user.is_password_match(login.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid login credentials"
         )
@@ -61,7 +61,7 @@ async def user_register(
         )
 
     user = User.get_by_username(session, register.username)
-    if user != None:
+    if user is not None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="already registered"
         )

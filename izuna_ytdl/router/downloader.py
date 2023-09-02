@@ -6,7 +6,6 @@ from sqlmodel import Session, select
 from pydantic import BaseModel
 import boto3
 from botocore.exceptions import ClientError
-import logging
 
 from izuna_ytdl.models import User, DownloadTask, Item
 from izuna_ytdl.database import get_session

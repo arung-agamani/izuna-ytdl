@@ -34,6 +34,8 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poe.tasks]
 run = "poetry run uvicorn izuna_ytdl.main:app"
-shell = "poetry run flask --app ./izuna_ytdl/main.py shell"
 format = "poetry run black izuna_ytdl/"
 dev = "poetry run uvicorn izuna_ytdl.main:app --reload"
+
+[tool.ruff.per-file-ignores]
+"izuna_ytdl/models/__init__.py" = ["F401"]

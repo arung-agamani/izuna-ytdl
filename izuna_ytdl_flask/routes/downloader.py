@@ -1,5 +1,4 @@
-from flask import Blueprint, request, make_response, current_app, jsonify
-from flask import Response
+from flask import Blueprint, request, make_response, jsonify
 from cerberus import Validator
 import yt_dlp
 import json
@@ -8,15 +7,10 @@ import threading
 from ..utils import regexes, responses
 from ..models.download_task import *
 from ..models.item import *
-from ...izuna_ytdl.config import DOMAIN
 from flask_jwt_extended import (
     jwt_required,
     get_jwt_identity,
-    get_jwt,
-    create_access_token,
-    set_access_cookies,
 )
-from datetime import datetime, timedelta, timezone
 import boto3
 from botocore.exceptions import ClientError
 import os
@@ -297,7 +291,7 @@ def download(id: str, task: DownloadTask):
                 task.update_state(DownloadStatusEnum.ERROR_TOO_LONG)
                 return
             task.update_title(info.get("title"))
-            count = ydl.download(f"https://www.youtube.com/watch?v={id}")
+            ydl.download(f"https://www.youtube.com/watch?v={id}")
 
             # os.remove(final_filepath)
             # raise Exception("stop")

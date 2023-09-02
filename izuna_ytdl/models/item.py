@@ -1,7 +1,7 @@
 import datetime
-from typing import Optional, List, TYPE_CHECKING
+from typing import List, TYPE_CHECKING
 import uuid as uuid_pkg
-from sqlmodel import Field, SQLModel, Session, select, Relationship
+from sqlmodel import Field, SQLModel, Relationship
 
 if TYPE_CHECKING:
     from .download_task import DownloadTask

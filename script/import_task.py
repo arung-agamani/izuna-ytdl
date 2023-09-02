@@ -1,8 +1,7 @@
-from sqlmodel import create_engine, SQLModel, Session, select
+from sqlmodel import create_engine, Session, select
 
 from izuna_ytdl import config
 from izuna_ytdl.models import User, Item, DownloadTask
-from izuna_ytdl_flask.models.item import Item as RedisItem
 from izuna_ytdl_flask.models.download_task import DownloadTask as RedisTask
 
 
