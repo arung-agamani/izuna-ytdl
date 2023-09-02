@@ -3,8 +3,10 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Build Status](https://travis-ci.org/username/repo.svg?branch=master)](https://travis-ci.org/username/repo)
 [![Coverage Status](https://coveralls.io/repos/github/username/repo/badge.svg?branch=master)](https://coveralls.io/github/username/repo?branch=master)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 
-Youtube Downloader as a Service.  
+
+Youtube Downloader as a Service.
 This project is created as a companion service to [Izuna](https://github.com/arung-agamani/izuna), serving additional features for downloading Youtube file and converting into desired format, and hosting the final file to AWS S3
 
 ## Table of Contents
@@ -27,9 +29,10 @@ To use this project, you'll need:
         curl -sSL https://install.python-poetry.org | python3 -
         ```
         For other installation methods, refer to the [Poetry documentation](https://python-poetry.org/docs/#installation).
+    - Run `poetry install`
 -   Poe task runner
     -   Install via https://github.com/nat-n/poethepoet
--   Python packages  
+-   Python packages
     As this project is using Poetry, the list of packages are already listed in `pyproject.toml`. Simply run `poetry install` to install the dependencies.
 -   `ffmpeg` binary
     -   Install it via package managers like `apt` (for Debian-based systems) or other means based on your operating system.
@@ -37,6 +40,8 @@ To use this project, you'll need:
         ```
         sudo apt install ffmpeg
         ```
+-   Setup pre-commit
+    -   Run `poetry run pre-commit install` to setup pre-commit hooks.
 
 Ensure that `ffmpeg` is accessible in your system's PATH.
 

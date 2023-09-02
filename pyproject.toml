@@ -22,12 +22,13 @@ sqlmodel = "^0.0.8"
 alembic = "^1.12.0"
 joserfc = "^0.7.0"
 argon2-cffi = "^23.1.0"
-psycopg2-binary = "^2.9.7"
+psycopg2 = "^2.9.7"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.7.0"
 ruff = "^0.0.287"
 pre-commit = "^3.3.3"
+deptry = "^0.12.0"
 
 [build-system]
 requires = ["poetry-core"]
