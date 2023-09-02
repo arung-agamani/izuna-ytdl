@@ -1,6 +1,7 @@
 import datetime
 from typing import Optional, TYPE_CHECKING
 import uuid as uuid_pkg
+from uuid import UUID
 from sqlmodel import Field, SQLModel, Session, select, Relationship
 from enum import StrEnum
 
@@ -40,3 +41,8 @@ class DownloadTask(SQLModel, table=True):
 
     item_id: Optional[uuid_pkg.UUID] = Field(foreign_key="item.id")
     item: Optional["Item"] = Relationship(back_populates="tasks")
+
+    @staticmethod
+    def get(session: Session, id: UUID):
+        res = session.exec(select(DownloadTask).where(DownloadTask.id == id))
+        return res.first()

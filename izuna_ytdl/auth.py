@@ -27,7 +27,7 @@ def unset_access_cookies(resp: Response):
 async def get_login_user(
     req: Request,
     session: Annotated[Session, Depends(get_session)],
-    access_token_cookie: Annotated[Optional[str], Cookie()] = None,
+    access_token_cookie: Annotated[str, Cookie()],
 ):
     from izuna_ytdl.models import User
 
