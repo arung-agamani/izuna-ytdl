@@ -1,6 +1,16 @@
 from fastapi import Response, Header, HTTPException, status, Request, Cookie
 from typing import Annotated, Optional
-from izuna_ytdl.models import User
+from argon2 import PasswordHasher
+
+ph = PasswordHasher()
+
+
+def hash_password(password: str):
+    return ph.hash(password)
+
+
+def verify_password(password_hash, password):
+    return ph.verify(password_hash, password)
 
 
 def set_access_cookies(resp: Response, username: str):
@@ -15,6 +25,8 @@ async def get_login_user(
     req: Request,
     access_token_cookie: Annotated[Optional[str], Cookie()] = None,
 ):
+    from izuna_ytdl.models import User
+
     print(req.headers)
     if access_token_cookie == None:
         raise HTTPException(

@@ -62,5 +62,5 @@ async def user_register(register: UserRegister):
             status_code=status.HTTP_409_CONFLICT, detail="already registered"
         )
 
-    user = User.create(username=register.username, password=register.password)
+    user = User.create(username=register.username, password_plain=register.password)
     return user
