@@ -1,9 +1,12 @@
 import datetime
-from typing import Optional
+from typing import Optional, List, TYPE_CHECKING
 import uuid as uuid_pkg
-from sqlmodel import Field, SQLModel, Session, select
+from sqlmodel import Field, SQLModel, Session, select, Relationship
 
 from izuna_ytdl.auth import hash_password, verify_password
+
+if TYPE_CHECKING:
+    from .download_task import DownloadTask
 
 
 class User(SQLModel, table=True):
@@ -19,6 +22,8 @@ class User(SQLModel, table=True):
     created_at: datetime.datetime = Field(
         nullable=False, default_factory=datetime.datetime.now
     )
+
+    created_tasks: List["DownloadTask"] = Relationship(back_populates="created_by")
 
     @staticmethod
     def create(session: Session, *, username: str, password_plain: str):

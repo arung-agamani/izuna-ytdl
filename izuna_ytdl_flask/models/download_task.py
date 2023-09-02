@@ -27,6 +27,9 @@ class DownloadTask(JsonModel):
     item: Optional[Item]
     downloaded_bytes: Optional[int]
 
+    class Meta:
+        model_key_prefix = "izuna_ytdl.models.download_task.DownloadTask"
+
     def update_state(self, state: DownloadStatusEnum):
         self.state = state
         self.save()
