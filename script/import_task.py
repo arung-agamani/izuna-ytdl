@@ -17,9 +17,10 @@ with Session(engine) as session:
             ).one(),
             created_at=task.created_at,
             downloaded_bytes=task.downloaded_bytes,
-            state=task.state,
+            state=task.state.value,
             url=task.url,
             item=session.exec(select(Item).where(Item.video_id == task.id)).one(),
+            title=task.title,
         )
         session.add(newTask)
     session.commit()

@@ -34,6 +34,7 @@ class DownloadTask(SQLModel, table=True):
         nullable=False, default_factory=datetime.datetime.now
     )
     url: str = Field()
+    title: str = Field()
     state: DownloadStatusEnum = Field(default=DownloadStatusEnum.QUEUED)
     downloaded_bytes: Optional[int] = Field()
 
