@@ -7,7 +7,8 @@ from izuna_ytdl_flask.models.user import User as fUser
 
 engine = create_engine(DB_CONNECTION_URL, echo=True)
 
-users = fUser.find()
-for u in users:
-    u: fUser = u
-    User.create(username=u.username, password_plain=u.password)
+with Session(engine) as session:
+    users = fUser.find()
+    for u in users:
+        u: fUser = u
+        User.create(session, username=u.username, password_plain=u.password)

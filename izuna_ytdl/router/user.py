@@ -2,9 +2,11 @@ from fastapi import APIRouter, Response, status, Depends, Header, HTTPException
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from typing import Annotated
+from sqlmodel import Session
 from .. import auth, config
 
 from izuna_ytdl.models import User
+from izuna_ytdl.database import get_session
 
 router = APIRouter()
 
@@ -14,9 +16,9 @@ class Login(BaseModel):
     password: str
 
 
-@router.post("/login")
-async def user_login(login: Login):
-    user = User.get_by_username(username=login.username)
+@router.post("/login", response_model=str)
+async def user_login(login: Login, session: Annotated[Session, Depends(get_session)]):
+    user = User.get_by_username(session, username=login.username)
     if user == None or not user.is_password_match(login.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid login credentials"
@@ -50,17 +52,21 @@ class UserRegister(BaseModel):
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
-async def user_register(register: UserRegister):
+async def user_register(
+    register: UserRegister, session: Annotated[Session, Depends(get_session)]
+):
     if register.signin_code != config.MASTER_SIGNUP_CODE:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid signup code"
         )
 
-    user = User.get_by_username(register.username)
+    user = User.get_by_username(session, register.username)
     if user != None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="already registered"
         )
 
-    user = User.create(username=register.username, password_plain=register.password)
+    user = User.create(
+        session, username=register.username, password_plain=register.password
+    )
     return user

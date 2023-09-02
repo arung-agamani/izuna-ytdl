@@ -22,21 +22,23 @@ class User(SQLModel, table=True):
     )
 
     @staticmethod
-    def create(*, username: str, password_plain: str):
-        with Session(engine) as session:
-            p = hash_password(password_plain)
-            u = User(username=username, password_hash=p)
-            session.add(u)
-            session.commit()
-            return u
+    def create(session: Session, *, username: str, password_plain: str):
+        session.begin()
+        u = User(username=username)
+        u.set_password(password_plain)
+        session.add(u)
+        session.commit()
 
     @staticmethod
-    def get_by_username(username: str):
-        with Session(engine) as session:
-            stmt = select(User).where(User.username == username)
-            result = session.exec(stmt)
-            user = result.first()
-            return user
+    def get_by_username(session: Session, username: str):
+        stmt = select(User).where(User.username == username)
+        result = session.exec(stmt)
+        user = result.first()
+        return user
 
     def is_password_match(self, password: str) -> bool:
         return verify_password(self.password_hash, password)
+
+    def set_password(self, password_plain: str):
+        p = hash_password(password_plain)
+        self.password_hash = p

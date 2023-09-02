@@ -1,6 +1,9 @@
-from fastapi import Response, Header, HTTPException, status, Request, Cookie
+from fastapi import Depends, Response, Header, HTTPException, status, Request, Cookie
 from typing import Annotated, Optional
 from argon2 import PasswordHasher
+from sqlmodel import Session
+
+from izuna_ytdl.database import get_session
 
 ph = PasswordHasher()
 
@@ -23,6 +26,7 @@ def unset_access_cookies(resp: Response):
 
 async def get_login_user(
     req: Request,
+    session: Annotated[Session, Depends(get_session)],
     access_token_cookie: Annotated[Optional[str], Cookie()] = None,
 ):
     from izuna_ytdl.models import User
@@ -34,7 +38,7 @@ async def get_login_user(
         )
 
     username = access_token_cookie
-    user = User.get_by_username(username=username)
+    user = User.get_by_username(session, username=username)
     if user == None:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="invalid access token"
