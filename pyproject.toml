@@ -22,6 +22,7 @@ sqlmodel = "^0.0.8"
 alembic = "^1.12.0"
 joserfc = "^0.7.0"
 argon2-cffi = "^23.1.0"
+psycopg2-binary = "^2.9.7"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.7.0"
@@ -31,6 +32,7 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poe.tasks]
-run = "poetry run flask --app ./izuna_ytdl/main.py run --host=0.0.0.0"
+run = "poetry run uvicorn izuna_ytdl.main:app"
 shell = "poetry run flask --app ./izuna_ytdl/main.py shell"
 format = "poetry run black izuna_ytdl/"
+dev = "poetry run uvicorn izuna_ytdl.main:app --reload"

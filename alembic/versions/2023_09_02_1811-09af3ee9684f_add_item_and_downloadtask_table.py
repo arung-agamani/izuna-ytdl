@@ -1,8 +1,8 @@
 """add item and downloadtask table
 
-Revision ID: 5d033b6e5432
+Revision ID: 09af3ee9684f
 Revises: fe7a584b0f30
-Create Date: 2023-09-02 17:13:37.352046
+Create Date: 2023-09-02 18:11:17.006961
 
 """
 from typing import Sequence, Union
@@ -13,7 +13,7 @@ import sqlmodel
 
 
 # revision identifiers, used by Alembic.
-revision: str = "5d033b6e5432"
+revision: str = "09af3ee9684f"
 down_revision: Union[str, None] = "fe7a584b0f30"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -59,6 +59,7 @@ def upgrade() -> None:
         ),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("url", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("title", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
         sa.Column("state", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
         sa.Column("downloaded_bytes", sa.Integer(), nullable=True),
         sa.Column("item_id", sqlmodel.sql.sqltypes.GUID(), nullable=True),
