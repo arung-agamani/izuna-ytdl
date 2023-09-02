@@ -14,6 +14,9 @@ class Item(JsonModel):
     remote_key: str
     total_bytes: Optional[int]
 
+    class Meta:
+        model_key_prefix = "izuna_ytdl.models.item.Item"
+
     def set_remote_key(self, key: str):
         self.remote_key = key
         self.save()

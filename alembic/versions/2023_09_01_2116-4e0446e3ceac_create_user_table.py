@@ -24,19 +24,13 @@ def upgrade() -> None:
     op.create_table(
         "user",
         sa.Column("id", sqlmodel.sql.sqltypes.GUID(), nullable=False),
-        sa.Column(
-            "username", sqlmodel.sql.sqltypes.AutoString(), nullable=False
-        ),
-        sa.Column(
-            "password", sqlmodel.sql.sqltypes.AutoString(), nullable=False
-        ),
+        sa.Column("username", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("password", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(op.f("ix_user_id"), "user", ["id"], unique=False)
-    op.create_index(
-        op.f("ix_user_username"), "user", ["username"], unique=True
-    )
+    op.create_index(op.f("ix_user_username"), "user", ["username"], unique=True)
     # ### end Alembic commands ###
 
 

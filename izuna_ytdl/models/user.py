@@ -3,7 +3,6 @@ from typing import Optional
 import uuid as uuid_pkg
 from sqlmodel import Field, SQLModel, Session, select
 
-from izuna_ytdl.database import engine
 from izuna_ytdl.auth import hash_password, verify_password
 
 
