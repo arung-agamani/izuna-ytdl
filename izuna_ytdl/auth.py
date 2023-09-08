@@ -31,7 +31,6 @@ async def get_login_user(
 ):
     from izuna_ytdl.models import User
 
-    print(req.headers)
     if access_token_cookie is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="missing access token"

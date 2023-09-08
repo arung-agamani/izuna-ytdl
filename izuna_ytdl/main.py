@@ -10,4 +10,4 @@ app.include_router(downloader_router, prefix="/api/downloader")
 
 @app.get("/")
 async def main_route():
-    return {"message": "Hey, It is me Goku"}
+    return "running"

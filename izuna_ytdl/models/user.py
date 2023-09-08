@@ -27,11 +27,11 @@ class User(SQLModel, table=True):
 
     @staticmethod
     def create(session: Session, *, username: str, password_plain: str):
-        session.begin()
         u = User(username=username)
         u.set_password(password_plain)
         session.add(u)
         session.commit()
+        return u
 
     @staticmethod
     def get_by_username(session: Session, username: str):

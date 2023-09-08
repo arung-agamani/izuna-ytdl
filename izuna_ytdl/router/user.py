@@ -69,4 +69,4 @@ async def user_register(
     user = User.create(
         session, username=register.username, password_plain=register.password
     )
-    return user
+    return "created"
