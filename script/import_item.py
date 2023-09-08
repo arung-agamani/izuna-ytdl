@@ -18,6 +18,7 @@ with Session(engine) as session:
             original_query=item.original_query,
             remote_key=item.remote_key,
             total_bytes=item.total_bytes,
+            name=item.name,
         )
         session.add(newItem)
     session.commit()

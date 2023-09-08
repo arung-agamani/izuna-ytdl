@@ -46,3 +46,22 @@ class DownloadTask(SQLModel, table=True):
     def get(session: Session, id: UUID):
         res = session.exec(select(DownloadTask).where(DownloadTask.id == id))
         return res.first()
+
+    def save(self, session: Session):
+        session.add(self)
+        session.commit()
+        session.refresh(self)
+
+    def set_state(self, session: Session, state: DownloadStatusEnum):
+        self.state = state
+        self.save(session)
+
+    def set_downloaded_bytes(self, session: Session, bytes: int):
+        self.downloaded_bytes = bytes
+        self.save(session)
+
+    def set(self, session: Session, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+        session.add(self)
+        session.save()

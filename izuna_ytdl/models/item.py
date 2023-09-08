@@ -1,7 +1,7 @@
 import datetime
 from typing import List, TYPE_CHECKING
 import uuid as uuid_pkg
-from sqlmodel import Field, SQLModel, Relationship
+from sqlmodel import Field, SQLModel, Relationship, Session
 
 if TYPE_CHECKING:
     from .download_task import DownloadTask
@@ -16,6 +16,7 @@ class Item(SQLModel, table=True):
         exclude=True,
     )
 
+    name: str = Field(nullable=False)
     video_id: str = Field(unique=True, nullable=False, index=True)
     created_by_username: str = Field(nullable=False)
     created_at: datetime.datetime = Field(
@@ -27,3 +28,18 @@ class Item(SQLModel, table=True):
     total_bytes: int | None
 
     tasks: List["DownloadTask"] = Relationship(back_populates="item")
+
+    def save(self, session: Session):
+        session.add(self)
+        session.commit()
+        session.refresh(self)
+
+    def set_total_bytes(self, session: Session, bytes: int):
+        self.total_bytes = bytes
+        self.save(session)
+
+    def set(self, session: Session, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+        session.add(self)
+        session.save()
