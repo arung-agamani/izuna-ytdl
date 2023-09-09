@@ -144,11 +144,15 @@ async def post_download(
     video_id = params.get_video_id()
 
     task = session.exec(
-        select(DownloadTask).where(DownloadTask.created_by == user)
+        select(DownloadTask)
+        .join(Item)
+        .where((DownloadTask.created_by == user) & (Item.video_id == video_id))
     ).first()
+    print(task)
 
     if task is None:
         item = session.exec(select(Item).where(Item.video_id == video_id)).first()
+        print(item)
         if item is not None:
             logging.debug(
                 f"No task found for {user.username}"
@@ -189,12 +193,12 @@ async def post_download(
             created_by=user,
         )
         newTask.save(session)
-        background_tasks.add_task(download, video_id, newTask)
+        background_tasks.add_task(download, session, video_id, newTask)
     else:
         logging.debug("Existing task found. Checking")
         if task.state == DownloadStatusEnum.QUEUED:
             logging.debug("Existing task found and queued. Executing")
-            background_tasks.add_task(download, video_id, task)
+            background_tasks.add_task(download, session, video_id, task)
         elif task.state == DownloadStatusEnum.DONE:
             return JSONResponse(
                 {
@@ -206,7 +210,7 @@ async def post_download(
         else:
             logging.debug(f"Existing task state is {task.state}")
             task.set_state(session, DownloadStatusEnum.QUEUED)
-            background_tasks.add_task(download, video_id, task)
+            background_tasks.add_task(download, session, video_id, task)
 
     return JSONResponse(
         {"success": True, "message": f"Queueing download task for Youtube {video_id}"},
@@ -214,9 +218,7 @@ async def post_download(
     )
 
 
-def download(
-    session: Annotated[Session, Depends(get_session)], id: str, task: DownloadTask
-):
+def download(session: Session, id: str, task: DownloadTask):
     final_filename = None
     final_filepath = ""
 
