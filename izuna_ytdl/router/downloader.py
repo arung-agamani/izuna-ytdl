@@ -32,7 +32,7 @@ class DownloadTaskOut(BaseModel):
 
 
 @router.get("/tasks")
-async def get_tasks(
+def get_tasks(
     session: Annotated[Session, Depends(get_session)],
     user: Annotated[User, Depends(auth.get_login_user)],
 ):
@@ -59,7 +59,7 @@ async def get_tasks(
 
 
 @router.get("/retrieve", response_model=str)
-async def get_download_link(
+def get_download_link(
     session: Annotated[Session, Depends(get_session)],
     user: Annotated[User, Depends(auth.get_login_user)],
     id: str,
@@ -123,7 +123,7 @@ class DownloadIn(BaseModel):
 
 
 @router.post("/download")
-async def post_download(
+def post_download(
     session: Annotated[Session, Depends(get_session)],
     user: Annotated[User, Depends(auth.get_login_user)],
     background_tasks: BackgroundTasks,

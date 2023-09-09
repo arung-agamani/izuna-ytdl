@@ -1,6 +1,8 @@
 from datetime import timedelta
+import hashlib
 from fastapi import APIRouter, status, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.responses import JSONResponse, PlainTextResponse
 from pydantic import BaseModel
 from typing import Annotated
 from sqlmodel import Session
@@ -27,25 +29,21 @@ def user_post_token(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid login credentials"
         )
+
+    fingerprint = auth.generate_fingerprint()
     access_token = auth.create_access_token(
-        data={"sub": user.username}, expires_delta=timedelta(days=1)
+        data={
+            "sub": user.username,
+            "user_fingerprint": hashlib.sha256(fingerprint.encode()).hexdigest(),
+        },
+        expires_delta=timedelta(days=1),
     )
 
-    return {"access_token": access_token, "token_type": "bearer"}
-
-
-# @router.post("/login", response_model=str)
-# def user_login(login: Login, session: Annotated[Session, Depends(get_session)]):
-#     user = User.get_by_username(session, username=login.username)
-#     if user is None or not user.is_password_match(login.password):
-#         raise HTTPException(
-#             status_code=status.HTTP_401_UNAUTHORIZED,
-#             detail="invalid login credentials"
-#         )
-
-#     resp = PlainTextResponse("user logged in")
-#     auth.set_access_cookies(resp, user.username)
-#     return resp
+    resp = JSONResponse(content={"access_token": access_token, "token_type": "bearer"})
+    resp.set_cookie(
+        "__Secure-Fgp", fingerprint, httponly=True, samesite="strict", secure=True
+    )
+    return resp
 
 
 class UserOut(BaseModel):
@@ -57,11 +55,18 @@ def user_me(user: Annotated[User, Depends(auth.get_login_user)]) -> UserOut:
     return user
 
 
-# @router.post("/logout")
-# def user_logout(user: Annotated[User, Depends(auth.get_login_user)]):
-#     resp = PlainTextResponse("user logged out")
-#     auth.unset_access_cookies(resp)
-#     return resp
+@router.post("/logout")
+def user_logout(user: Annotated[User, Depends(auth.get_login_user)]):
+    resp = PlainTextResponse("user logged out")
+    resp.set_cookie(
+        "__Secure-Fgp",
+        "",
+        httponly=True,
+        samesite="strict",
+        secure=True,
+        max_age=0,
+    )
+    return resp
 
 
 class UserRegister(BaseModel):

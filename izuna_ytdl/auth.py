@@ -1,5 +1,9 @@
+import logging
+import os
+import base64
+import hashlib
 from datetime import datetime, timedelta
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Cookie
 from fastapi.security import OAuth2PasswordBearer
 from typing import Annotated
 from argon2 import PasswordHasher
@@ -28,6 +32,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/user/token")
 def get_login_user(
     session: Annotated[Session, Depends(get_session)],
     token: Annotated[str, Depends(oauth2_scheme)],
+    fingerprint: Annotated[str, Cookie(alias=("__Secure-Fgp"))],
 ):
     from izuna_ytdl.models import User
 
@@ -40,7 +45,17 @@ def get_login_user(
         payload = jwt.decode(token, config.JWT_NO_HIMITSU, algorithms=[ALGORITHM])
         username = payload.get("sub")
         if username is None:
-            print("missing sub")
+            logging.debug("missing sub")
+            raise credentials_exception
+
+        fgp_claim = payload.get("user_fingerprint")
+        if fgp_claim is None:
+            logging.debug("missing fingerprint hash")
+            raise credentials_exception
+
+        cookie_hashed = hashlib.sha256(fingerprint.encode()).hexdigest()
+        if fgp_claim != cookie_hashed:
+            logging.debug("invalid fingerprint")
             raise credentials_exception
     except JWTError as err:
         print("jwterr", err)
@@ -62,3 +77,8 @@ def create_access_token(
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, config.JWT_NO_HIMITSU, ALGORITHM)
     return encoded_jwt
+
+
+def generate_fingerprint():
+    random_bytes = os.urandom(64)
+    return base64.b64encode(random_bytes).decode()
