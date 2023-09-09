@@ -2,8 +2,7 @@ import datetime
 from typing import List, TYPE_CHECKING
 import uuid as uuid_pkg
 from sqlmodel import Field, SQLModel, Session, select, Relationship
-
-from izuna_ytdl.auth import hash_password, verify_password
+from izuna_ytdl.auth import verify_password, hash_password
 
 if TYPE_CHECKING:
     from .download_task import DownloadTask
