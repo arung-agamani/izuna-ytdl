@@ -34,6 +34,7 @@ httpx = "^0.24.1"
 pytest-order = "^1.1.0"
 pytest = "^7.4.2"
 pytest-env = "^1.0.1"
+pytest-cov = "^4.1.0"
 
 [build-system]
 requires = ["poetry-core"]
@@ -51,4 +52,9 @@ dev = "poetry run uvicorn izuna_ytdl.main:app --reload"
 env = [
     "MASTER_SIGNUP_CODE=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
     "DB_CONNECTION_URL=sqlite:///test.db",
+    "YTDL_BUCKET_NAME=izuna-ytdl-files",
 ]
+addopts = "--cov --cov-report=lcov:lcov.info --cov-report=term"
+
+[tool.coverage.run]
+source = ["izuna_ytdl"]

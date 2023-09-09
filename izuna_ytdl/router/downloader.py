@@ -143,13 +143,12 @@ async def post_download(
 
     video_id = params.get_video_id()
 
-    [task, item] = session.exec(
-        select(DownloadTask, Item)
-        .join(Item, isouter=True)
-        .where((Item.video_id == video_id) & (DownloadTask.created_by == user))
+    task = session.exec(
+        select(DownloadTask).where(DownloadTask.created_by == user)
     ).first()
 
     if task is None:
+        item = session.exec(select(Item).where(Item.video_id == video_id)).first()
         if item is not None:
             logging.debug(
                 f"No task found for {user.username}"
@@ -163,8 +162,7 @@ async def post_download(
                 url=params.url,
                 state=DownloadStatusEnum.DONE,
             )
-            session.add(newTask)
-            session.commit()
+            newTask.save(session)
             return JSONResponse(
                 {
                     "success": True,
@@ -173,6 +171,7 @@ async def post_download(
                 },
                 status_code=status.HTTP_201_CREATED,
             )
+
         logging.debug("No task found. Creating and queueing")
         newItem = Item(
             created_by_username=user.username,
@@ -206,7 +205,7 @@ async def post_download(
             )
         else:
             logging.debug(f"Existing task state is {task.state}")
-            task.set_state(DownloadStatusEnum.QUEUED)
+            task.set_state(session, DownloadStatusEnum.QUEUED)
             background_tasks.add_task(download, video_id, task)
 
     return JSONResponse(
@@ -264,7 +263,7 @@ def download(
             duration = info.get("duration")
             if duration > 600:
                 task.set(session, state=DownloadStatusEnum.ERROR_TOO_LONG)
-                return
+                raise Exception("duration too long")
 
             task.set(session, title=info.get("title"))
             ydl.download(f"https://www.youtube.com/watch?v={id}")
@@ -298,6 +297,7 @@ def download(
         else:
             task.set(session, state=DownloadStatusEnum.ERROR_DOWNLOAD)
     except Exception as err:
-        logging.error(f"Other errors: {err.__class__.__name__}")
+        errm = f"Other errors: {err.__class__.__name__} {err}"
+        logging.error(errm)
         task.set(session, state=DownloadStatusEnum.ERROR_UNKNOWN)
-        task.set_downloaded_bytes(0)
+        task.set_downloaded_bytes(session, 0)

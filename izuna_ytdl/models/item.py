@@ -41,5 +41,4 @@ class Item(SQLModel, table=True):
     def set(self, session: Session, **kwargs):
         for k, v in kwargs.items():
             setattr(self, k, v)
-        session.add(self)
-        session.save()
+        self.save(session)

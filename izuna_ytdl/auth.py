@@ -1,4 +1,4 @@
-from fastapi import Depends, Response, HTTPException, status, Request, Cookie
+from fastapi import Depends, Response, HTTPException, status, Cookie
 from typing import Annotated
 from argon2 import PasswordHasher
 from sqlmodel import Session
@@ -24,8 +24,7 @@ def unset_access_cookies(resp: Response):
     resp.set_cookie(key="access_token_cookie", value="", httponly=True)
 
 
-async def get_login_user(
-    req: Request,
+def get_login_user(
     session: Annotated[Session, Depends(get_session)],
     access_token_cookie: Annotated[str, Cookie()],
 ):
