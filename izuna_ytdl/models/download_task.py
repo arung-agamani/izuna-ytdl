@@ -1,12 +1,16 @@
 import datetime
-from enum import Enum
-import logging
-from redis_om import JsonModel, Field, NotFoundError
-from typing import cast, Optional
-from .user import get_user
-from .item import Item, create_item
+from typing import Optional, TYPE_CHECKING
+import uuid as uuid_pkg
+from uuid import UUID
+from sqlmodel import Field, SQLModel, Session, select, Relationship
+from enum import StrEnum
 
-class DownloadStatusEnum(Enum):
+if TYPE_CHECKING:
+    from .item import Item
+    from .user import User
+
+
+class DownloadStatusEnum(StrEnum):
     QUEUED = "0"
     PROCESSING = "1"
     DONE = "2"
@@ -16,119 +20,47 @@ class DownloadStatusEnum(Enum):
     ERROR_NOT_FOUND = "6"
 
 
-class DownloadTask(JsonModel):
-    title: str
-    id: str = Field(index=True)
-    created_by: str = Field(index=True)
-    created_at: datetime.datetime = Field(index=True)
-    url: str
-    state: DownloadStatusEnum
-    item: Optional[Item]
-    downloaded_bytes: Optional[int]
+class DownloadTask(SQLModel, table=True):
+    id: uuid_pkg.UUID = Field(
+        primary_key=True,
+        index=True,
+        nullable=False,
+        default_factory=uuid_pkg.uuid4,
+        exclude=True,
+    )
+    created_by_id: uuid_pkg.UUID = Field(foreign_key="user.id")
+    created_by: "User" = Relationship(back_populates="created_tasks")
 
-    def update_state(self, state: DownloadStatusEnum):
+    created_at: datetime.datetime = Field(
+        nullable=False, default_factory=datetime.datetime.now
+    )
+    url: str = Field()
+    title: str = Field()
+    state: DownloadStatusEnum = Field(default=DownloadStatusEnum.QUEUED)
+    downloaded_bytes: Optional[int] = Field()
+
+    item_id: Optional[uuid_pkg.UUID] = Field(foreign_key="item.id")
+    item: Optional["Item"] = Relationship(back_populates="tasks")
+
+    @staticmethod
+    def get(session: Session, id: UUID):
+        res = session.exec(select(DownloadTask).where(DownloadTask.id == id))
+        return res.first()
+
+    def save(self, session: Session):
+        session.add(self)
+        session.commit()
+        session.refresh(self)
+
+    def set_state(self, session: Session, state: DownloadStatusEnum):
         self.state = state
-        self.save()
+        self.save(session)
 
-    def update_title(self, title: str):
-        self.title = title
-        self.save()
+    def set_downloaded_bytes(self, session: Session, bytes: int):
+        self.downloaded_bytes = bytes
+        self.save(session)
 
-    def set_item(self, item: Item):
-        self.item = item
-        self.save()
-
-    def update(self, title: str, state: DownloadStatusEnum):
-        self.title = title
-        self.state = state
-        self.save()
-    
-    def set_downloaded_bytes(self, v: int):
-        self.downloaded_bytes = v
-        self.save()
-
-
-def get_task(id: str):
-    try:
-        task = DownloadTask.find(DownloadTask.id == id).first()
-        task = cast(DownloadTask, task)
-        return task
-    except NotFoundError as e:
-        print(e)
-        return None
-
-
-def get_task_with_user(id: str, username: str):
-    try:
-        task = DownloadTask.find(
-            (DownloadTask.id == id) & (DownloadTask.created_by == username)
-        ).first()
-        task = cast(DownloadTask, task)
-        return task
-    except NotFoundError as e:
-        logging.error(e)
-        return None
-
-
-def get_task_by_user(username: str):
-    try:
-        user = get_user(username)
-        if user is None:
-            return []
-        tasks = DownloadTask.find(DownloadTask.created_by == user.username).all()
-        tasks.sort(key=lambda task: task.created_at)
-        return tasks
-    except NotFoundError as e:
-        print(e)
-        return []
-
-
-def create_task(id: str, url: str, title: str, created_by: str):
-    task = get_task_with_user(id, created_by)
-    if task is not None:
-        return None
-    now = datetime.datetime.now()
-    item = create_item(id, "", created_by, now, url, url, "")
-    task = DownloadTask(
-        id=id,
-        title=title,
-        url=url,
-        state=DownloadStatusEnum.QUEUED,
-        created_by=created_by,
-        created_at=now,
-        item=item,
-    )
-    task.save()
-    # task.set_item(item)
-    return task
-
-
-def create_task_with_item(id: str, url: str, title: str, created_by: str, item: Item):
-    task = get_task_with_user(id, created_by)
-    if task is not None:
-        return None
-    now = datetime.datetime.now()
-    task = DownloadTask(
-        id=id,
-        title=title,
-        url=url,
-        state=DownloadStatusEnum.QUEUED,
-        created_by=created_by,
-        created_at=now,
-        item=item,
-    )
-    task.save()
-    # task.set_item(item)
-    return task
-
-
-def create_task_without_item(id: str, url: str, title: str, created_by: str):
-    task = get_task_with_user(id, created_by)
-    if task is not None:
-        return None
-    now = datetime.datetime.now()
-    task = DownloadTask(
-        id=id, title=title, url=url, state=DownloadStatusEnum.QUEUED, created_by=created_by, created_at=now
-    )
-    task.save()
-    return task
+    def set(self, session: Session, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+        self.save(session)

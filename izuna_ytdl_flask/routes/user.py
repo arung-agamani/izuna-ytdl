@@ -1,27 +1,21 @@
 from flask import (
     Blueprint,
     request,
-    current_app,
     make_response,
-    session,
     jsonify,
-    Response,
 )
 import json
 from cerberus import Validator
-from ..utils import regexes, responses, models
-from ..models.user import get_user, create_user, User
-from ..config import DOMAIN, MASTER_SIGNUP_CODE
-from redis_om import RedisModel
+from ..utils import regexes, responses
+from ..models.user import get_user, create_user
+from ...izuna_ytdl.config import DOMAIN, MASTER_SIGNUP_CODE
 from flask_jwt_extended import (
     set_access_cookies,
     create_access_token,
     jwt_required,
     unset_access_cookies,
 )
-from flask_jwt_extended import get_jwt, get_jwt_identity
-from datetime import datetime, timezone, timedelta
-import logging
+from flask_jwt_extended import get_jwt_identity
 
 bp = Blueprint("user", __name__, url_prefix="/api/user")
 

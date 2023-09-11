@@ -161,3 +161,7 @@ cython_debug/
 
 .vscode/
 .envrc
+*.db
+.ruff_cache/
+
+lcov.info

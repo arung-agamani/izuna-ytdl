@@ -1,7 +1,7 @@
 from redis import Redis
 from dataclasses import dataclass
 from datetime import datetime
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 from enum import Enum
 import json
 from uuid import uuid4

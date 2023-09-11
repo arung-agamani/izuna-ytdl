@@ -1,5 +1,4 @@
-from flask import Blueprint, request, make_response, current_app, jsonify
-from flask import Response
+from flask import Blueprint, request, make_response, jsonify
 from cerberus import Validator
 import yt_dlp
 import json
@@ -8,20 +7,15 @@ import threading
 from ..utils import regexes, responses
 from ..models.download_task import *
 from ..models.item import *
-from ..config import DOMAIN
 from flask_jwt_extended import (
     jwt_required,
     get_jwt_identity,
-    get_jwt,
-    create_access_token,
-    set_access_cookies,
 )
-from datetime import datetime, timedelta, timezone
 import boto3
 from botocore.exceptions import ClientError
 import os
 import logging
-from .. import config
+from ...izuna_ytdl import config
 
 s3 = boto3.client("s3")
 
@@ -247,6 +241,7 @@ async def handle_download():
 #     }]
 # }
 
+
 def download(id: str, task: DownloadTask):
     final_filename = None
     final_filepath = ""
@@ -259,7 +254,7 @@ def download(id: str, task: DownloadTask):
             final_filepath = (
                 d.get("info_dict").get("__files_to_move").get(final_filename)
             )
-    
+
     def progress_hook(d: dict):
         task.set_downloaded_bytes(d["downloaded_bytes"])
         task.item.set_total_bytes(d["total_bytes"])
@@ -283,7 +278,7 @@ def download(id: str, task: DownloadTask):
             ],
             "retries": 10,
             "postprocessor_hooks": [yt_dlp_monitor],
-            "progress_hooks": [progress_hook]
+            "progress_hooks": [progress_hook],
         }
         task.update_state(DownloadStatusEnum.PROCESSING)
 
@@ -296,7 +291,7 @@ def download(id: str, task: DownloadTask):
                 task.update_state(DownloadStatusEnum.ERROR_TOO_LONG)
                 return
             task.update_title(info.get("title"))
-            count = ydl.download(f"https://www.youtube.com/watch?v={id}")
+            ydl.download(f"https://www.youtube.com/watch?v={id}")
 
             # os.remove(final_filepath)
             # raise Exception("stop")
