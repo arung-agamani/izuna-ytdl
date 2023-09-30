@@ -38,6 +38,14 @@ pytest = "^7.4.2"
 pytest-env = "^1.0.1"
 pytest-cov = "^4.1.0"
 
+[tool.poetry.group.lambda.dependencies]
+yt-dlp = "^2023.7.6"
+sqlmodel = "^0.0.8"
+psycopg2-binary = "^2.9.7"
+pydantic = "<2.0.0"
+
+
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

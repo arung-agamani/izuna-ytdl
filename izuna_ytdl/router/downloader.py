@@ -11,6 +11,9 @@ from botocore.exceptions import ClientError
 from urllib.parse import parse_qs
 import logging
 
+import pprint
+import json
+import time
 import yt_dlp
 
 from izuna_ytdl.models import User, DownloadTask, Item
@@ -20,6 +23,9 @@ from izuna_ytdl.models.download_task import DownloadStatusEnum
 
 router = APIRouter()
 s3 = boto3.client("s3")
+lambda_client = boto3.client("lambda")
+
+# logging.getLogger().setLevel(logging.DEBUG)
 
 
 class DownloadTaskOut(BaseModel):
@@ -149,10 +155,11 @@ def post_download(
         .where((DownloadTask.created_by == user) & (Item.video_id == video_id))
     ).first()
     print(task)
-
+    print("======There is task for this user")
     if task is None:
         item = session.exec(select(Item).where(Item.video_id == video_id)).first()
         print(item)
+
         if item is not None:
             logging.debug(
                 f"No task found for {user.username}"
@@ -175,7 +182,8 @@ def post_download(
                 },
                 status_code=status.HTTP_201_CREATED,
             )
-
+        else:
+            print("========There is item for this video ID")
         logging.debug("No task found. Creating and queueing")
         newItem = Item(
             created_by_username=user.username,
@@ -219,87 +227,113 @@ def post_download(
 
 
 def download(session: Session, id: str, task: DownloadTask):
-    final_filename = None
-    final_filepath = ""
+    task_json = task.json()
+    user_json = task.created_by.json()
+    item_json = task.item.json()
 
-    def yt_dlp_monitor(d):
-        nonlocal final_filename
-        nonlocal final_filepath
-        if d.get("status") == "finished":
-            final_filename = d.get("info_dict").get("filepath")
-            final_filepath = (
-                d.get("info_dict").get("__files_to_move").get(final_filename)
-            )
-
-    def progress_hook(d: dict):
-        task.set_downloaded_bytes(session, d["downloaded_bytes"])
-        task.item.set_total_bytes(session, d["total_bytes"])
-
+    # payload = {"id": id, "user": task.created_by, "item": task.item, "task": task}
+    payload = {
+        "id": id,
+        "user": json.loads(user_json),
+        "item": json.loads(item_json),
+        "task": json.loads(task_json),
+    }
+    # pprint.pprint(payload, indent=4)
+    payload["task"]["id"] = str(task.id)
+    session.commit()
+    session.close()
     try:
-        ydl_opts = {
-            "extract_flat": "discard_in_playlist",
-            "final_ext": "mp3",
-            "format": "ba",
-            "fragment_retries": 10,
-            "ignoreerrors": "only_download",
-            "outtmpl": {"default": "%(title)s.%(ext)s"},
-            "postprocessors": [
-                {
-                    "key": "FFmpegExtractAudio",
-                    "nopostoverwrites": False,
-                    "preferredcodec": "mp3",
-                    "preferredquality": "5",
-                },
-                {"key": "FFmpegConcat", "only_multi_video": True, "when": "playlist"},
-            ],
-            "retries": 10,
-            "postprocessor_hooks": [yt_dlp_monitor],
-            "progress_hooks": [progress_hook],
-        }
-        task.set(session, state=DownloadStatusEnum.PROCESSING)
+        response = lambda_client.invoke(
+            FunctionName="ytdl_executor", Payload=json.dumps(payload)
+        )
+        logging.info(f"AWS Lambda function invoked for id {id}")
+    except ClientError:
+        logging.exception(f"AWS Lambda function failed to be invoked for id {id}")
+    return
 
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(
-                f"https://www.youtube.com/watch?v={id}", download=False
-            )
-            duration = info.get("duration")
-            if duration > 600:
-                task.set(session, state=DownloadStatusEnum.ERROR_TOO_LONG)
-                raise Exception("duration too long")
 
-            task.set(session, title=info.get("title"))
-            ydl.download(f"https://www.youtube.com/watch?v={id}")
+# def download(session: Session, id: str, task: DownloadTask):
+#     final_filename = None
+#     final_filepath = ""
 
-            # os.remove(final_filepath)
-            # raise Exception("stop")
+#     def yt_dlp_monitor(d):
+#         nonlocal final_filename
+#         nonlocal final_filepath
+#         if d.get("status") == "finished":
+#             final_filename = d.get("info_dict").get("filepath")
+#             final_filepath = (
+#                 d.get("info_dict").get("__files_to_move").get(final_filename)
+#             )
 
-            logging.debug("Download complete")
-            logging.debug(f"End filename: ${final_filename}")
-            logging.debug(f"End filepath: ${final_filepath}")
-            remote_key = f"public/{id}/{final_filename}"
-            task.item.set(
-                session,
-                name=final_filename,
-                remote_key=remote_key,
-            )
-            s3.upload_file(final_filepath, config.BUCKET_NAME, remote_key)
-            task.set(
-                session,
-                title=final_filename,
-                state=DownloadStatusEnum.DONE,
-            )
-            os.remove(final_filepath)
-            return
+#     def progress_hook(d: dict):
+#         task.set_downloaded_bytes(session, d["downloaded_bytes"])
+#         task.item.set_total_bytes(session, d["total_bytes"])
 
-    except yt_dlp.utils.DownloadError as err:
-        logging.error("Download error")
-        logging.error(err)
-        if err.msg.rfind("Video unavailable") != -1:
-            task.set(session, state=DownloadStatusEnum.ERROR_NOT_FOUND)
-        else:
-            task.set(session, state=DownloadStatusEnum.ERROR_DOWNLOAD)
-    except Exception as err:
-        errm = f"Other errors: {err.__class__.__name__} {err}"
-        logging.error(errm)
-        task.set(session, state=DownloadStatusEnum.ERROR_UNKNOWN)
-        task.set_downloaded_bytes(session, 0)
+#     try:
+#         ydl_opts = {
+#             "extract_flat": "discard_in_playlist",
+#             "final_ext": "mp3",
+#             "format": "ba",
+#             "fragment_retries": 10,
+#             "ignoreerrors": "only_download",
+#             "outtmpl": {"default": "%(title)s.%(ext)s"},
+#             "postprocessors": [
+#                 {
+#                     "key": "FFmpegExtractAudio",
+#                     "nopostoverwrites": False,
+#                     "preferredcodec": "mp3",
+#                     "preferredquality": "5",
+#                 },
+#                 {"key": "FFmpegConcat", "only_multi_video": True, "when": "playlist"},
+#             ],
+#             "retries": 10,
+#             "postprocessor_hooks": [yt_dlp_monitor],
+#             "progress_hooks": [progress_hook],
+#         }
+#         task.set(session, state=DownloadStatusEnum.PROCESSING)
+
+#         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+#             info = ydl.extract_info(
+#                 f"https://www.youtube.com/watch?v={id}", download=False
+#             )
+#             duration = info.get("duration")
+#             if duration > 600:
+#                 task.set(session, state=DownloadStatusEnum.ERROR_TOO_LONG)
+#                 raise Exception("duration too long")
+
+#             task.set(session, title=info.get("title"))
+#             ydl.download(f"https://www.youtube.com/watch?v={id}")
+
+#             # os.remove(final_filepath)
+#             # raise Exception("stop")
+
+#             logging.debug("Download complete")
+#             logging.debug(f"End filename: ${final_filename}")
+#             logging.debug(f"End filepath: ${final_filepath}")
+#             remote_key = f"public/{id}/{final_filename}"
+#             task.item.set(
+#                 session,
+#                 name=final_filename,
+#                 remote_key=remote_key,
+#             )
+#             s3.upload_file(final_filepath, config.BUCKET_NAME, remote_key)
+#             task.set(
+#                 session,
+#                 title=final_filename,
+#                 state=DownloadStatusEnum.DONE,
+#             )
+#             os.remove(final_filepath)
+#             return
+
+#     except yt_dlp.utils.DownloadError as err:
+#         logging.error("Download error")
+#         logging.error(err)
+#         if err.msg.rfind("Video unavailable") != -1:
+#             task.set(session, state=DownloadStatusEnum.ERROR_NOT_FOUND)
+#         else:
+#             task.set(session, state=DownloadStatusEnum.ERROR_DOWNLOAD)
+#     except Exception as err:
+#         errm = f"Other errors: {err.__class__.__name__} {err}"
+#         logging.error(errm)
+#         task.set(session, state=DownloadStatusEnum.ERROR_UNKNOWN)
+#         task.set_downloaded_bytes(session, 0)
